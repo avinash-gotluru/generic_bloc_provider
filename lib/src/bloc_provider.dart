@@ -6,12 +6,12 @@ typedef UpdateShouldNotify<T> = bool Function(T bloc, _BlocProvider oldWidget);
 class BlocProvider<T extends Bloc> extends StatefulWidget {
   final T bloc;
   final Widget child;
-  final UpdateShouldNotify<T> updateShouldNotifyOverride;
+  final UpdateShouldNotify<T>? updateShouldNotifyOverride;
 
   BlocProvider({
-    Key key,
-    @required this.child,
-    @required this.bloc,
+    Key? key,
+    required this.child,
+    required this.bloc,
     this.updateShouldNotifyOverride,
   }) : super(key: key);
 
@@ -43,20 +43,29 @@ class _BlocProviderState<T extends Bloc> extends State<BlocProvider<T>> {
 class _BlocProvider<T extends Bloc> extends InheritedWidget {
   final T bloc;
   final Widget child;
-  final UpdateShouldNotify<T> updateShouldNotifyOverride;
+  final UpdateShouldNotify<T>? updateShouldNotifyOverride;
 
   _BlocProvider({
-    this.bloc,
-    this.child,
+    required this.bloc,
+    required this.child,
     this.updateShouldNotifyOverride,
   }) : super(child: child);
 
   static T of<T extends Bloc>(BuildContext context, bool attachContext) {
     final type = _typeOf<_BlocProvider<T>>();
-    final blocProvider = attachContext
-        ? (context.inheritFromWidgetOfExactType(type) as _BlocProvider)
-        : (context.ancestorInheritedElementForWidgetOfExactType(type).widget
-            as _BlocProvider);
+
+    _BlocProvider<T>? blocProvider;
+
+    if (attachContext) {
+      blocProvider =
+          context.dependOnInheritedWidgetOfExactType<_BlocProvider<T>>();
+    } else {
+      var element =
+          context.getElementForInheritedWidgetOfExactType<_BlocProvider<T>>();
+      if (element != null) {
+        blocProvider = element.widget as _BlocProvider<T>;
+      }
+    }
 
     if (blocProvider == null) {
       throw FlutterError('Unable to find BLoC of type $type.\n'
@@ -70,6 +79,6 @@ class _BlocProvider<T extends Bloc> extends InheritedWidget {
   @override
   bool updateShouldNotify(_BlocProvider oldWidget) =>
       updateShouldNotifyOverride != null
-          ? updateShouldNotifyOverride(bloc, oldWidget)
+          ? updateShouldNotifyOverride!(bloc, oldWidget)
           : oldWidget.bloc != bloc;
 }
